@@ -32,7 +32,7 @@ class MyStrategy(LeastExpensiveLinearPayuMS):
 
     async def score_offer(self, offer):
         print(f"Offer: {offer}")
-        return super().score_offer(offer)
+        return await super().score_offer(offer)
 
 
 async def main(subnet_tag, payment_driver, payment_network):
@@ -55,7 +55,7 @@ async def main(subnet_tag, payment_driver, payment_network):
             real_time_str = future_result.result().stderr.split()[1]
             real_time = float(real_time_str)
 
-            strategy.save_execution_time(ctx.provider_id, real_time)
+            #strategy.save_execution_time(ctx.provider_id, real_time)
             print("TASK EXECUTED", ctx.provider_name, ctx.provider_id, real_time)
 
             task.accept_result()
