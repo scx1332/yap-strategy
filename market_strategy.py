@@ -8,7 +8,7 @@ from ya_market import rest
 
 from yapapi import Golem, Task, WorkContext
 from yapapi.payload import vm
-from yapapi.strategy import SCORE_TRUSTED, MarketStrategy, LeastExpensiveLinearPayuMS
+from yapapi.strategy import SCORE_TRUSTED, MarketStrategy, LeastExpensiveLinearPayuMS, SCORE_REJECTED
 
 examples_dir = pathlib.Path(__file__).resolve().parent.parent
 sys.path.append(str(examples_dir))
@@ -39,20 +39,30 @@ class MyStrategy(LeastExpensiveLinearPayuMS):
         pricing_cooeffs = offer.props['golem.com.pricing.model.linear.coeffs']
         usage_vector = offer.props['golem.com.usage.vector']
 
-        if usage_vector[0] == 'golem.usage.cpu_sec':
-            price_cpu_idx = 0
-            price_env_idx = 1
-        else:
-            price_cpu_idx = 1
-            price_env_idx = 0
+        # Find indexes of CPU and env usage in the usage vector
+        # to match them with the pricing coefficients later
+        price_cpu_idx = -1
+        price_env_idx = -1
+        for idx, val in enumerate(usage_vector):
+            if val == 'golem.usage.cpu_sec':
+                price_cpu_idx = idx
+            elif val == 'golem.usage.duration_sec':
+                price_env_idx = idx
+            else:
+                print(f"Unused usage vector element: {val}")
+
+        if price_cpu_idx == -1 or price_env_idx == -1:
+            print(f"ERROR: CPU or env usage not found in the usage vector")
+            return SCORE_REJECTED
 
         provider_name = offer.props['golem.node.id.name']
 
-        price_CPU = pricing_cooeffs[price_cpu_idx] 
-        price_env = pricing_cooeffs[price_env_idx] 
-        price_start = pricing_cooeffs[2]    
+        price_cpu = pricing_cooeffs[price_cpu_idx]
+        price_env = pricing_cooeffs[price_env_idx]
+        # start price is by design the last element of the pricing coefficients
+        price_start = pricing_cooeffs[-1]
 
-        print(f"Proposal from: {provider_name}, CPU: {price_CPU}, env {price_env}, START {price_start}")   
+        print(f"Proposal from: {provider_name}, CPU: {price_cpu}, env {price_env}, START {price_start}")
             
         return await super().score_offer(offer)
 
