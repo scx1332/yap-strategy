@@ -17,8 +17,6 @@ IMAGE_HASH = "5c385688be6ed4e339a43d8a68bfb674d60951b4970448ba20d1934d"
 #   This is the task we'll be running on the provider
 TASK_CMD = ["/usr/local/bin/python", "-c", "for i in range(10000000): i * 7"]
 
-logger = logging.getLogger("yapapi")
-
 
 class MyStrategy(LeastExpensiveLinearPayuMS):
     def __init__(self,
@@ -26,12 +24,14 @@ class MyStrategy(LeastExpensiveLinearPayuMS):
                  max_fixed_price=None,
                  max_price_for=None,
                  ):
+        self._logger = logging.getLogger(f"market-strategy")
+        self._logger.setLevel(logging.DEBUG)
         super().__init__(expected_time_secs, max_fixed_price, max_price_for)
 
     async def score_offer(self, offer):
         provider_name = offer.props['golem.node.id.name']
 
-        logger.info(f"Received offer from: {provider_name}")
+        self._logger.info(f"Received offer from: {provider_name}")
 
         pricing_coeffs = offer.props['golem.com.pricing.model.linear.coeffs']
         usage_vector = offer.props['golem.com.usage.vector']
@@ -42,16 +42,16 @@ class MyStrategy(LeastExpensiveLinearPayuMS):
         price_env_idx = -1
         for idx, val in enumerate(usage_vector):
             if val == 'golem.usage.cpu_sec':
-                logger.debug(f"CPU usage found at index {idx}")
+                self._logger.debug(f"CPU usage found at index {idx}")
                 price_cpu_idx = idx
             elif val == 'golem.usage.duration_sec':
-                logger.debug(f"Duration sec found at index {idx}")
+                self._logger.debug(f"Duration sec found at index {idx}")
                 price_env_idx = idx
             else:
-                logger.warning(f"Unused usage vector element: {val}")
+                self._logger.warning(f"Unused usage vector element: {val}")
 
         if price_cpu_idx == -1 or price_env_idx == -1:
-            logger.error(f"ERROR: CPU or duration_sec not found in the usage vector")
+            self._logger.error(f"ERROR: CPU or duration_sec not found in the usage vector")
             return SCORE_REJECTED
 
         price_cpu = pricing_coeffs[price_cpu_idx]
@@ -59,12 +59,14 @@ class MyStrategy(LeastExpensiveLinearPayuMS):
         # start price is by design the last element of the pricing coefficients
         price_start = pricing_coeffs[-1]
 
-        logger.info(f"Proposal from: {provider_name}, CPU: {price_cpu}, env {price_env}, START {price_start}")
+        self._logger.info(f"Proposal from: {provider_name}, CPU: {price_cpu}, env {price_env}, START {price_start}")
 
         return await super().score_offer(offer)
 
 
 async def main(subnet_tag, payment_driver, payment_network):
+    logger = logging.getLogger("market-main")
+    logger.setLevel(logging.DEBUG)
     payload = await vm.repo(image_hash=IMAGE_HASH)
     counter_caps = {
         "golem.usage.cpu_sec": 0.00001,

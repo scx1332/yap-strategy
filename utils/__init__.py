@@ -1,6 +1,7 @@
 """Utilities for yapapi example scripts."""
 import argparse
 import asyncio
+import logging
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
