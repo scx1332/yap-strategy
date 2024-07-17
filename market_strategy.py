@@ -31,15 +31,37 @@ class MyStrategy(LeastExpensiveLinearPayuMS):
         super().__init__(expected_time_secs, max_fixed_price, max_price_for)
 
     async def score_offer(self, offer):
-        print(f"Offer: {offer}")
+        #print(f"Offer: {offer.props['golem.com.pricing.model.linear.coeffs']}")
+        #print(f"Offer: {offer.props}")
+        #'golem.com.usage.vector': ['golem.usage.cpu_sec', 'golem.usage.duration_sec']
+        #'golem.com.pricing.model': 'linear', 'golem.com.pricing.model.linear.coeffs'
+        #'golem.node.id.name': 'testnet-c1-8'
+        pricing_cooeffs = offer.props['golem.com.pricing.model.linear.coeffs']
+        usage_vector = offer.props['golem.com.usage.vector']
+
+        if usage_vector[0] == 'golem.usage.cpu_sec':
+            price_cpu_idx = 0
+            price_env_idx = 1
+        else:
+            price_cpu_idx = 1
+            price_env_idx = 0
+
+        provider_name = offer.props['golem.node.id.name']
+
+        price_CPU = pricing_cooeffs[price_cpu_idx] 
+        price_env = pricing_cooeffs[price_env_idx] 
+        price_start = pricing_cooeffs[2]    
+
+        print(f"Proposal from: {provider_name}, CPU: {price_CPU}, env {price_env}, START {price_start}")   
+            
         return await super().score_offer(offer)
 
 
 async def main(subnet_tag, payment_driver, payment_network):
     payload = await vm.repo(image_hash=IMAGE_HASH)
     counter_caps = {
-        "golem.usage.cpu_sec": 0.1,
-        "golem.usage.duration_sec": 0.1,
+        "golem.usage.cpu_sec": 0.00001,
+        "golem.usage.duration_sec": 0.00001,
     }
     strategy = MyStrategy(
         max_fixed_price=0.0,
@@ -75,7 +97,8 @@ async def main(subnet_tag, payment_driver, payment_network):
         print_env_info(golem)
 
         #   Task generator that never ends
-        tasks = (Task(None) for _ in itertools.count(1))
+        #tasks = (Task(None) for _ in itertools.count(1))
+        tasks = (Task(None) for _ in range(10))
         async for task in golem.execute_tasks(worker, tasks, payload, max_workers=1):
             pass
 
