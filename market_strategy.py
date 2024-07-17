@@ -3,9 +3,6 @@ import itertools
 import logging
 import pathlib
 import sys
-from collections import defaultdict
-
-from ya_market import rest
 
 from yapapi import Golem, Task, WorkContext
 from yapapi.payload import vm
