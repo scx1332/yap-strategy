@@ -1,12 +1,10 @@
-#!/usr/bin/env python3
-import itertools
 import logging
 import pathlib
 import sys
 
 from yapapi import Golem, Task, WorkContext
 from yapapi.payload import vm
-from yapapi.strategy import SCORE_TRUSTED, MarketStrategy, LeastExpensiveLinearPayuMS, SCORE_REJECTED
+from yapapi.strategy import LeastExpensiveLinearPayuMS, SCORE_REJECTED
 
 examples_dir = pathlib.Path(__file__).resolve().parent.parent
 sys.path.append(str(examples_dir))
@@ -20,6 +18,7 @@ IMAGE_HASH = "5c385688be6ed4e339a43d8a68bfb674d60951b4970448ba20d1934d"
 TASK_CMD = ["/usr/local/bin/python", "-c", "for i in range(10000000): i * 7"]
 
 logger = logging.getLogger(__name__)
+
 
 class MyStrategy(LeastExpensiveLinearPayuMS):
     def __init__(self,
@@ -61,7 +60,7 @@ class MyStrategy(LeastExpensiveLinearPayuMS):
         price_start = pricing_coeffs[-1]
 
         logger.info(f"Proposal from: {provider_name}, CPU: {price_cpu}, env {price_env}, START {price_start}")
-            
+
         return await super().score_offer(offer)
 
 
@@ -85,7 +84,7 @@ async def main(subnet_tag, payment_driver, payment_network):
             real_time_str = future_result.result().stderr.split()[1]
             real_time = float(real_time_str)
 
-            #strategy.save_execution_time(ctx.provider_id, real_time)
+            # strategy.save_execution_time(ctx.provider_id, real_time)
             logger.info("TASK EXECUTED", ctx.provider_name, ctx.provider_id, real_time)
 
             task.accept_result()
@@ -105,7 +104,7 @@ async def main(subnet_tag, payment_driver, payment_network):
         print_env_info(golem)
 
         #   Task generator that never ends
-        #tasks = (Task(None) for _ in itertools.count(1))
+        # tasks = (Task(None) for _ in itertools.count(1))
         tasks = (Task(None) for _ in range(10))
         async for task in golem.execute_tasks(worker, tasks, payload, max_workers=1):
             pass
