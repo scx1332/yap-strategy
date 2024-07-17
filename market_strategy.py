@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import itertools
+import logging
 import pathlib
 import sys
 from collections import defaultdict
@@ -21,6 +22,7 @@ IMAGE_HASH = "5c385688be6ed4e339a43d8a68bfb674d60951b4970448ba20d1934d"
 #   This is the task we'll be running on the provider
 TASK_CMD = ["/usr/local/bin/python", "-c", "for i in range(10000000): i * 7"]
 
+logger = logging.getLogger(__name__)
 
 class MyStrategy(LeastExpensiveLinearPayuMS):
     def __init__(self,
@@ -31,12 +33,11 @@ class MyStrategy(LeastExpensiveLinearPayuMS):
         super().__init__(expected_time_secs, max_fixed_price, max_price_for)
 
     async def score_offer(self, offer):
-        #print(f"Offer: {offer.props['golem.com.pricing.model.linear.coeffs']}")
-        #print(f"Offer: {offer.props}")
-        #'golem.com.usage.vector': ['golem.usage.cpu_sec', 'golem.usage.duration_sec']
-        #'golem.com.pricing.model': 'linear', 'golem.com.pricing.model.linear.coeffs'
-        #'golem.node.id.name': 'testnet-c1-8'
-        pricing_cooeffs = offer.props['golem.com.pricing.model.linear.coeffs']
+        provider_name = offer.props['golem.node.id.name']
+
+        logger.info(f"Received offer from: {provider_name}")
+
+        pricing_coeffs = offer.props['golem.com.pricing.model.linear.coeffs']
         usage_vector = offer.props['golem.com.usage.vector']
 
         # Find indexes of CPU and env usage in the usage vector
@@ -45,24 +46,24 @@ class MyStrategy(LeastExpensiveLinearPayuMS):
         price_env_idx = -1
         for idx, val in enumerate(usage_vector):
             if val == 'golem.usage.cpu_sec':
+                logger.debug(f"CPU usage found at index {idx}")
                 price_cpu_idx = idx
             elif val == 'golem.usage.duration_sec':
+                logger.debug(f"Duration sec found at index {idx}")
                 price_env_idx = idx
             else:
-                print(f"Unused usage vector element: {val}")
+                logger.warning(f"Unused usage vector element: {val}")
 
         if price_cpu_idx == -1 or price_env_idx == -1:
-            print(f"ERROR: CPU or env usage not found in the usage vector")
+            logger.error(f"ERROR: CPU or duration_sec not found in the usage vector")
             return SCORE_REJECTED
 
-        provider_name = offer.props['golem.node.id.name']
-
-        price_cpu = pricing_cooeffs[price_cpu_idx]
-        price_env = pricing_cooeffs[price_env_idx]
+        price_cpu = pricing_coeffs[price_cpu_idx]
+        price_env = pricing_coeffs[price_env_idx]
         # start price is by design the last element of the pricing coefficients
-        price_start = pricing_cooeffs[-1]
+        price_start = pricing_coeffs[-1]
 
-        print(f"Proposal from: {provider_name}, CPU: {price_cpu}, env {price_env}, START {price_start}")
+        logger.info(f"Proposal from: {provider_name}, CPU: {price_cpu}, env {price_env}, START {price_start}")
             
         return await super().score_offer(offer)
 
@@ -88,7 +89,7 @@ async def main(subnet_tag, payment_driver, payment_network):
             real_time = float(real_time_str)
 
             #strategy.save_execution_time(ctx.provider_id, real_time)
-            print("TASK EXECUTED", ctx.provider_name, ctx.provider_id, real_time)
+            log.("TASK EXECUTED", ctx.provider_name, ctx.provider_id, real_time)
 
             task.accept_result()
 
