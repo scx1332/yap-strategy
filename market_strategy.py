@@ -17,7 +17,7 @@ IMAGE_HASH = "5c385688be6ed4e339a43d8a68bfb674d60951b4970448ba20d1934d"
 #   This is the task we'll be running on the provider
 TASK_CMD = ["/usr/local/bin/python", "-c", "for i in range(10000000): i * 7"]
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("yapapi")
 
 
 class MyStrategy(LeastExpensiveLinearPayuMS):
