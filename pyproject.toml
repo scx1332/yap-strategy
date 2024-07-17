@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "yap-strategy"
+version = "0.1.0"
+description = ""
+authors = ["scx1332 <sieciech.czajka@golem.network>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+yapapi = "^0.13.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
