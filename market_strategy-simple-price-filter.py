@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+import logging
 import pathlib
 import sys
 
@@ -19,47 +19,63 @@ TASK_CMD = ["/usr/local/bin/python", "-c", "for i in range(10000000): i * 7"]
 
 
 class MyStrategy(MarketStrategy):
-    def __init__(self):
-         self.max_CPU_price=0.00001
-         self.max_ENV_price=0.00001
-         self.max_STR_price=0.0
-                
+    def __init__(self,
+                 expected_time_secs=60,
+                 max_fixed_price=None,
+                 max_price_for=None,
+                 ):
+        self.max_cpu_price = 0.00001
+        self.max_dur_price = 0.00001
+        self.max_str_price = 0.0
+        self._logger = logging.getLogger(f"market-strategy")
+        self._logger.setLevel(logging.INFO)
+        super().__init__(expected_time_secs, max_fixed_price, max_price_for)
+
     async def score_offer(self, offer):
-        #'golem.com.usage.vector': ['golem.usage.cpu_sec', 'golem.usage.duration_sec']
-        #'golem.com.pricing.model': 'linear', 'golem.com.pricing.model.linear.coeffs'
-        #'golem.node.id.name': 'testnet-c1-8'
-        pricing_cooeffs = offer.props['golem.com.pricing.model.linear.coeffs']
-        usage_vector = offer.props['golem.com.usage.vector']
-
-        if usage_vector[0] == 'golem.usage.cpu_sec':
-            price_cpu_idx = 0
-            price_env_idx = 1
-        else:
-            price_cpu_idx = 1
-            price_env_idx = 0
-
         provider_name = offer.props['golem.node.id.name']
 
-        price_CPU = pricing_cooeffs[price_cpu_idx] 
-        price_env = pricing_cooeffs[price_env_idx] 
-        price_start = pricing_cooeffs[2]    
+        self._logger.info(f"Received offer from: {provider_name}")
 
-        score = SCORE_NEUTRAL
-    
-        if (price_CPU <= self.max_CPU_price and \
-            price_env <= self.max_ENV_price and \
-            price_start <= self.max_STR_price):
+        pricing_coeffs = offer.props['golem.com.pricing.model.linear.coeffs']
+        usage_vector = offer.props['golem.com.usage.vector']
+
+        # Find indexes of CPU and env usage in the usage vector
+        # to match them with the pricing coefficients later
+        price_cpu_idx = -1
+        price_dur_idx = -1
+        for idx, val in enumerate(usage_vector):
+            if val == 'golem.usage.cpu_sec':
+                self._logger.debug(f"CPU usage found at index {idx}")
+                price_cpu_idx = idx
+            elif val == 'golem.usage.duration_sec':
+                self._logger.debug(f"Duration sec found at index {idx}")
+                price_dur_idx = idx
+            else:
+                self._logger.warning(f"Unused usage vector element: {val}")
+
+        if price_cpu_idx == -1 or price_dur_idx == -1:
+            self._logger.error(f"ERROR: CPU or duration_sec not found in the usage vector")
+            return SCORE_REJECTED
+
+        price_cpu = pricing_coeffs[price_cpu_idx]
+        price_env = pricing_coeffs[price_dur_idx]
+        # start price is by design the last element of the pricing coefficients
+        price_start = pricing_coeffs[-1]
+
+        if price_cpu <= self.max_cpu_price and price_env <= self.max_dur_price and price_start <= self.max_str_price:
             score = SCORE_TRUSTED
-
         else:
-            score = SCORE_REJECTED        
+            score = SCORE_REJECTED
 
-        print(f"Proposal from: {provider_name},CPU: {"{:.6f}".format(price_CPU)},env {"{:.6f}".format(price_env)},START {"{:.6f}".format(price_start)},score {score}")   
-            
+        self._logger.info(
+            f"Proposal from: {provider_name},CPU: {"{:.6f}".format(price_cpu)},env {"{:.6f}".format(price_env)},START {"{:.6f}".format(price_start)},score {score}")
+
         return score
 
 
 async def main(subnet_tag, payment_driver, payment_network):
+    logger = logging.getLogger("market-main")
+    logger.setLevel(logging.INFO)
     payload = await vm.repo(image_hash=IMAGE_HASH)
 
     strategy = MyStrategy()
@@ -73,8 +89,8 @@ async def main(subnet_tag, payment_driver, payment_network):
             real_time_str = future_result.result().stderr.split()[1]
             real_time = float(real_time_str)
 
-            #strategy.save_execution_time(ctx.provider_id, real_time)
-            print("TASK EXECUTED", ctx.provider_name, ctx.provider_id, real_time)
+            # strategy.save_execution_time(ctx.provider_id, real_time)
+            logger.info("TASK EXECUTED", ctx.provider_name, ctx.provider_id, real_time)
 
             task.accept_result()
 
@@ -93,7 +109,7 @@ async def main(subnet_tag, payment_driver, payment_network):
         print_env_info(golem)
 
         #   Task generator that never ends
-        #tasks = (Task(None) for _ in itertools.count(1))
+        # tasks = (Task(None) for _ in itertools.count(1))
         tasks = (Task(None) for _ in range(10))
         async for task in golem.execute_tasks(worker, tasks, payload, max_workers=1):
             pass
