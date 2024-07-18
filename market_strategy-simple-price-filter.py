@@ -93,7 +93,7 @@ async def main(subnet_tag, payment_driver, payment_network):
             real_time = float(real_time_str)
 
             # strategy.save_execution_time(ctx.provider_id, real_time)
-            logger.info("TASK EXECUTED", ctx.provider_name, ctx.provider_id, real_time)
+            logger.info(f"TASK EXECUTED {ctx.provider_name} {ctx.provider_id} {real_time}")
 
             task.accept_result()
 
