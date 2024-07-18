@@ -19,10 +19,10 @@ TASK_CMD = ["/usr/local/bin/python", "-c", "for i in range(10000000): i * 7"]
 
 
 class MyStrategy(MarketStrategy):
-    def __init__(self):
-        self.max_cpu_price = 0.00001
-        self.max_dur_price = 0.00001
-        self.max_str_price = 0.0
+    def __init__(self, max_prices):
+        self.max_cpu_price = max_prices['max_cpu_price']
+        self.max_dur_price = max_prices['max_dur_price']
+        self.max_str_price = max_prices['max_str_price']
         self._logger = logging.getLogger(f"market-strategy")
         self._logger.setLevel(logging.INFO)
 
@@ -77,7 +77,13 @@ async def main(subnet_tag, payment_driver, payment_network):
     logger.setLevel(logging.INFO)
     payload = await vm.repo(image_hash=IMAGE_HASH)
 
-    strategy = MyStrategy()
+    max_prices = {
+        'max_cpu_price': 0.00001,
+        'max_env_price': 0.00001,
+        'max_str_price': 0.0,
+    }
+
+    strategy = MyStrategy(max_prices)
 
     async def worker(ctx: WorkContext, tasks):
         async for task in tasks:
