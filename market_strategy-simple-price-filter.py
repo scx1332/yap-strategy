@@ -58,17 +58,21 @@ class MyStrategy(MarketStrategy):
             return SCORE_REJECTED
 
         price_cpu = pricing_coeffs[price_cpu_idx]
-        price_env = pricing_coeffs[price_dur_idx]
+        price_dur = pricing_coeffs[price_dur_idx]
         # start price is by design the last element of the pricing coefficients
         price_start = pricing_coeffs[-1]
 
-        if price_cpu <= self.max_cpu_price and price_env <= self.max_dur_price and price_start <= self.max_str_price:
+        if price_cpu <= self.max_cpu_price and price_dur <= self.max_dur_price and price_start <= self.max_str_price:
             score = SCORE_TRUSTED
         else:
             score = SCORE_REJECTED
 
         self._logger.info(
-            f"Proposal from: {provider_name},CPU: {"{:.6f}".format(price_cpu)},env {"{:.6f}".format(price_env)},START {"{:.6f}".format(price_start)},score {score}")
+            f"Proposal from: {provider_name}, "
+            f"cpu: {price_cpu:.6f}, "
+            f"dur: {price_dur:.6f}, "
+            f"start: {price_start:.6f}), "
+            f"score: {score}")
 
         return score
 
