@@ -23,8 +23,7 @@ class MyStrategy(MarketStrategy):
         self._max_cpu_price = max_prices['max_cpu_price']
         self._max_dur_price = max_prices['max_dur_price']
         self._max_str_price = max_prices['max_str_price']
-        self._logger = logging.getLogger(f"market-strategy")
-        self._logger.setLevel(logging.INFO)
+        self._logger = logging.getLogger(f"yapapi.my-strategy")
 
     async def score_offer(self, offer):
         provider_name = offer.props['golem.node.id.name']
@@ -73,8 +72,7 @@ class MyStrategy(MarketStrategy):
 
 
 async def main(subnet_tag, payment_driver, payment_network):
-    logger = logging.getLogger("market-main")
-    logger.setLevel(logging.INFO)
+    logger = logging.getLogger("yapapi.example-main")
     payload = await vm.repo(image_hash=IMAGE_HASH)
 
     max_prices = {

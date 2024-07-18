@@ -24,8 +24,7 @@ class MyStrategy(LeastExpensiveLinearPayuMS):
                  max_fixed_price=None,
                  max_price_for=None,
                  ):
-        self._logger = logging.getLogger(f"market-strategy")
-        self._logger.setLevel(logging.DEBUG)
+        self._logger = logging.getLogger(f"yapapi.my-strategy")
         super().__init__(expected_time_secs, max_fixed_price, max_price_for)
 
     async def score_offer(self, offer):
@@ -65,8 +64,7 @@ class MyStrategy(LeastExpensiveLinearPayuMS):
 
 
 async def main(subnet_tag, payment_driver, payment_network):
-    logger = logging.getLogger("market-main")
-    logger.setLevel(logging.DEBUG)
+    logger = logging.getLogger("yapapi.example-main")
     payload = await vm.repo(image_hash=IMAGE_HASH)
     counter_caps = {
         "golem.usage.cpu_sec": 0.00001,
