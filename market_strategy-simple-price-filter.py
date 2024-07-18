@@ -19,17 +19,12 @@ TASK_CMD = ["/usr/local/bin/python", "-c", "for i in range(10000000): i * 7"]
 
 
 class MyStrategy(MarketStrategy):
-    def __init__(self,
-                 expected_time_secs=60,
-                 max_fixed_price=None,
-                 max_price_for=None,
-                 ):
+    def __init__(self):
         self.max_cpu_price = 0.00001
         self.max_dur_price = 0.00001
         self.max_str_price = 0.0
         self._logger = logging.getLogger(f"market-strategy")
         self._logger.setLevel(logging.INFO)
-        super().__init__(expected_time_secs, max_fixed_price, max_price_for)
 
     async def score_offer(self, offer):
         provider_name = offer.props['golem.node.id.name']
