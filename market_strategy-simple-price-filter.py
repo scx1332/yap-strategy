@@ -20,9 +20,9 @@ TASK_CMD = ["/usr/local/bin/python", "-c", "for i in range(10000000): i * 7"]
 
 class MyStrategy(MarketStrategy):
     def __init__(self, max_prices):
-        self.max_cpu_price = max_prices['max_cpu_price']
-        self.max_dur_price = max_prices['max_dur_price']
-        self.max_str_price = max_prices['max_str_price']
+        self._max_cpu_price = max_prices['max_cpu_price']
+        self._max_dur_price = max_prices['max_dur_price']
+        self._max_str_price = max_prices['max_str_price']
         self._logger = logging.getLogger(f"market-strategy")
         self._logger.setLevel(logging.INFO)
 
@@ -57,7 +57,7 @@ class MyStrategy(MarketStrategy):
         # start price is by design the last element of the pricing coefficients
         price_start = pricing_coeffs[-1]
 
-        if price_cpu <= self.max_cpu_price and price_dur <= self.max_dur_price and price_start <= self.max_str_price:
+        if price_cpu <= self._max_cpu_price and price_dur <= self._max_dur_price and price_start <= self._max_str_price:
             score = SCORE_TRUSTED
         else:
             score = SCORE_REJECTED
@@ -79,7 +79,7 @@ async def main(subnet_tag, payment_driver, payment_network):
 
     max_prices = {
         'max_cpu_price': 0.00001,
-        'max_env_price': 0.00001,
+        'max_dur_price': 0.00001,
         'max_str_price': 0.0,
     }
 
